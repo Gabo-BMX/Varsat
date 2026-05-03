@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Varsat — Sistema de Producción</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap');
+:root{--bg:#0f1117;--bg2:#171b25;--bg3:#1e2330;--border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.15);--text:#f0f2f7;--text2:#8a93a8;--text3:#555e72;--accent:#e8500a;--accent2:#ff6b2b;--green2:#22c55e;--red:#dc2626;--r:10px;--rs:6px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Barlow',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:1.5rem;padding:1rem;}
+.brand h1{font-family:'Barlow Condensed',sans-serif;font-size:2.5rem;font-weight:700;letter-spacing:.05em;text-align:center;}
+.brand h1 span{color:var(--accent2);}
+.brand p{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.12em;text-align:center;margin-top:3px;}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:1.4rem;width:100%;max-width:360px;}
+.lbl-sm{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px;display:block;}
+.sector-tabs{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.stab{font-size:11px;font-weight:700;padding:5px 10px;border-radius:var(--rs);border:1px solid var(--border);background:var(--bg3);cursor:pointer;color:var(--text2);font-family:'Barlow',sans-serif;transition:all .15s;}
+.stab:hover{color:var(--text);border-color:var(--border2);}
+.stab.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.user-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px;}
+.ubtn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:10px;cursor:pointer;text-align:left;font-family:'Barlow',sans-serif;transition:all .15s;}
+.ubtn:hover{border-color:var(--border2);}
+.ubtn.sel{border-color:var(--accent2);background:rgba(255,107,43,.12);}
+.ubtn .un{font-size:13px;font-weight:700;color:var(--text);}
+.ubtn .us{font-size:11px;color:var(--text3);margin-top:2px;}
+.pin-row{display:flex;gap:10px;justify-content:center;margin:10px 0 8px;}
+.dot{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--border2);background:transparent;transition:all .1s;}
+.dot.on{background:var(--accent2);border-color:var(--accent2);}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+.nbtn{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:13px;font-size:17px;font-weight:700;cursor:pointer;color:var(--text);font-family:'Barlow',sans-serif;transition:all .1s;}
+.nbtn:hover{background:var(--bg);border-color:var(--border2);}
+.nbtn:active{transform:scale(.95);}
+.pin-err{font-size:12px;color:#f87171;text-align:center;min-height:18px;margin-top:8px;font-weight:600;}
+.master-hint{font-size:11px;color:var(--text3);}
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:11px 1.2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.tb-brand{font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;color:var(--accent2);letter-spacing:.05em;}
+.tb-info{font-size:12px;color:var(--text2);margin-top:1px;}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.cdot{width:8px;height:8px;border-radius:50%;background:var(--text3);display:inline-block;}
+.cdot.on{background:var(--green2);}
+.logout-btn{font-size:12px;color:var(--text2);background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:5px 12px;cursor:pointer;font-family:'Barlow',sans-serif;font-weight:600;}
+.logout-btn:hover{color:var(--text);}
+#main-screen{display:none;flex-direction:column;min-height:100vh;}
+.content{padding:1.2rem;max-width:860px;margin:0 auto;width:100%;}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-bottom:1.2rem;}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;}
+.stat-num{font-size:26px;font-weight:700;font-family:'Barlow Condensed',sans-serif;}
+.stat-lbl{font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-top:2px;}
+.toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:1rem;}
+.new-btn{padding:8px 18px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;}
+.new-btn:hover{background:var(--accent2);}
+.filter-sel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:7px 10px;font-size:12px;color:var(--text2);font-family:'Barlow',sans-serif;outline:none;cursor:pointer;}
+.filter-sel option{background:var(--bg2);}
+.order-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.1rem;margin-bottom:10px;transition:border-color .2s;}
+.order-card:hover{border-color:var(--border2);}
+.order-card.mine{border-left:3px solid var(--accent2);}
+.order-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;gap:8px;}
+.oid{font-size:10px;color:var(--text3);letter-spacing:.08em;font-weight:700;}
+.oclient{font-size:16px;font-weight:700;}
+.oproduct{font-size:12px;color:var(--text2);margin-top:2px;}
+.badge{font-size:10px;padding:4px 9px;border-radius:20px;font-weight:700;white-space:nowrap;letter-spacing:.04em;}
+.b-laser{background:rgba(37,99,235,.2);color:#60a5fa;border:1px solid rgba(37,99,235,.3);}
+.b-plegado{background:rgba(22,163,74,.2);color:#4ade80;border:1px solid rgba(22,163,74,.3);}
+.b-soldadura{background:rgba(220,38,38,.2);color:#f87171;border:1px solid rgba(220,38,38,.3);}
+.b-lavado{background:rgba(6,182,212,.2);color:#67e8f9;border:1px solid rgba(6,182,212,.3);}
+.b-pintura{background:rgba(168,85,247,.2);color:#d8b4fe;border:1px solid rgba(168,85,247,.3);}
+.b-paqueteria{background:rgba(234,179,8,.2);color:#fde047;border:1px solid rgba(234,179,8,.3);}
+.b-done{background:rgba(22,163,74,.15);color:#86efac;border:1px solid rgba(22,163,74,.25);}
+.b-pending{background:rgba(232,80,10,.2);color:#fb923c;border:1px solid rgba(232,80,10,.3);}
+.pi{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;margin-bottom:8px;}
+.pi-title{font-size:11px;font-weight:700;color:var(--accent2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;}
+.fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px 12px;}
+.fl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;}
+.fv{font-size:13px;font-weight:700;color:var(--text);margin-top:1px;}
+.prog-wrap{margin:10px 0 4px;}
+.prog-bar{height:3px;background:var(--bg3);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--accent2);border-radius:2px;transition:width .4s;}
+.prog-steps{display:flex;gap:4px;margin-top:6px;flex-wrap:wrap;}
+.sp{font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;letter-spacing:.05em;}
+.sp-done{background:rgba(22,163,74,.2);color:#4ade80;}
+.sp-active{background:rgba(232,80,10,.25);color:#fb923c;}
+.sp-pending{background:var(--bg3);color:var(--text3);}
+.done-btn{width:100%;margin-top:10px;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;transition:background .15s;}
+.done-btn:hover{background:var(--accent2);}
+.del-btn{width:100%;margin-top:6px;padding:8px;background:transparent;color:var(--text3);border:1px solid var(--border);border-radius:var(--rs);font-size:12px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;}
+.del-btn:hover{border-color:var(--red);color:#f87171;}
+.ts-row{font-size:10px;color:var(--text3);margin-top:8px;border-top:1px solid var(--border);padding-top:8px;}
+.empty{text-align:center;padding:3rem 1rem;color:var(--text3);font-size:14px;}
+.sec-title{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:1rem;letter-spacing:.03em;}
+.form-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;margin-bottom:1rem;}
+.form-section-title{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:1rem;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ffull{grid-column:1/-1;}
+.flabel{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;display:block;}
+.finput,.fselect{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);padding:10px 12px;font-size:14px;color:var(--text);font-family:'Barlow',sans-serif;outline:none;transition:border-color .15s;}
+.finput:focus,.fselect:focus{border-color:var(--accent2);}
+.fselect option{background:var(--bg2);}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;}
+.tog{flex:1;min-width:80px;padding:10px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rs);font-size:13px;font-weight:700;cursor:pointer;color:var(--text2);font-family:'Barlow',sans-serif;transition:all .15s;text-align:center;}
+.tog:hover{color:var(--text);}
+.tog.on{background:var(--accent);border-color:var(--accent);color:#fff;}
+.color-row{display:flex;gap:16px;flex-wrap:wrap;padding-bottom:18px;margin-top:4px;}
+.cbtn{width:36px;height:36px;border-radius:50%;border:3px solid transparent;cursor:pointer;position:relative;transition:all .15s;padding:0;outline:none;}
+.cbtn.on{border-color:var(--accent2);transform:scale(1.15);}
+.cbtn span{position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;color:var(--text3);white-space:nowrap;pointer-events:none;}
+.calc-box{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:10px 12px;font-size:13px;color:var(--text2);min-height:40px;line-height:1.6;}
+.calc-box strong{color:var(--text);}
+.purchase-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:1rem;margin-bottom:10px;position:relative;}
+.pi-remove{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;padding:0;}
+.pi-remove:hover{color:#f87171;}
+.add-more-btn{width:100%;padding:10px;background:transparent;border:1px dashed var(--border2);border-radius:var(--rs);color:var(--text2);font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;transition:all .15s;margin-top:4px;}
+.add-more-btn:hover{border-color:var(--accent2);color:var(--accent2);}
+.submit-btn{width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;cursor:pointer;font-family:'Barlow Condensed',sans-serif;letter-spacing:.06em;transition:background .15s;margin-top:4px;}
+.submit-btn:hover{background:var(--accent2);}
+.cancel-btn{width:100%;padding:11px;background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;font-family:'Barlow',sans-serif;margin-top:8px;transition:all .15s;}
+.cancel-btn:hover{color:var(--text);}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:500px){.fgrid,.row2{grid-template-columns:1fr;}.ffull{grid-column:1;}.stats-row{grid-template-columns:1fr 1fr;}}
+</style>
+</head>
+<body>
+
+<div id="login-screen">
+  <div class="brand"><h1>VAR<span>SAT</span></h1><p>Sistema de Producción</p></div>
+  <div class="login-box">
+    <span class="lbl-sm">Sector</span>
+    <div class="sector-tabs" id="sector-tabs"></div>
+    <div class="user-grid" id="user-grid"></div>
+    <div class="pin-row">
+      <div class="dot" id="d0"></div><div class="dot" id="d1"></div>
+      <div class="dot" id="d2"></div><div class="dot" id="d3"></div>
+    </div>
+    <div class="numpad">
+      <button class="nbtn" onclick="pressPin(1)">1</button>
+      <button class="nbtn" onclick="pressPin(2)">2</button>
+      <button class="nbtn" onclick="pressPin(3)">3</button>
+      <button class="nbtn" onclick="pressPin(4)">4</button>
+      <button class="nbtn" onclick="pressPin(5)">5</button>
+      <button class="nbtn" onclick="pressPin(6)">6</button>
+      <button class="nbtn" onclick="pressPin(7)">7</button>
+      <button class="nbtn" onclick="pressPin(8)">8</button>
+      <button class="nbtn" onclick="pressPin(9)">9</button>
+      <button class="nbtn" style="font-size:12px" onclick="clearPin()">Limpiar</button>
+      <button class="nbtn" onclick="pressPin(0)">0</button>
+      <button class="nbtn" onclick="backPin()">&#8592;</button>
+    </div>
+    <div class="pin-err" id="pin-err"></div>
+  </div>
+  <div class="master-hint">Clave maestra: <strong style="color:var(--text2)">0000</strong></div>
+</div>
+
+<div id="main-screen">
+  <div class="topbar">
+    <div><div class="tb-brand">VARSAT</div><div class="tb-info" id="tb-info"></div></div>
+    <div class="tb-right">
+      <span class="cdot" id="cdot"></span>
+      <button class="logout-btn" onclick="logout()">Salir</button>
+    </div>
+  </div>
+  <div class="content" id="app-content"></div>
+</div>
+
+<script>
+const firebaseConfig={apiKey:"AIzaSyBMUfX6y60kTiCwBEi0g6-xR-SdeNsq5Xo",authDomain:"varsat-12a03.firebaseapp.com",databaseURL:"https://varsat-12a03-default-rtdb.firebaseio.com",projectId:"varsat-12a03",storageBucket:"varsat-12a03.firebasestorage.app",messagingSenderId:"637847580457",appId:"1:637847580457:web:87e9cb803522624c749138"};
+firebase.initializeApp(firebaseConfig);
+const db=firebase.database();
+
+const SECTORS=['Oficina','Láser','Plegado','Soldadura','Lavado','Pintura','Paquetería'];
+const FLOW=['Láser','Plegado','Soldadura','Lavado','Pintura','Paquetería'];
+const MASTER='0000';
+const MEDIDAS=['60x20','60x30','60x40','60x50','60x60','70x30','70x35','70x40','70x42','70x50','80x30','80x40','80x50','80x60','90x30','90x35','90x40','90x42','90x50','90x60'];
+const COLORES=[{n:'Blanco',h:'#e8e8e8'},{n:'Negro',h:'#222'},{n:'Azul',h:'#1d4ed8'},{n:'Rojo',h:'#dc2626'},{n:'Gris',h:'#6b7280'},{n:'Naranja',h:'#ea580c'}];
+const LOGISTICA=['Via Cargo','Flex','Cruz del Sur','Simple'];
+const USERS=[
+  {id:'O1',name:'Oficina 1',sector:'Oficina',pin:'1111'},{id:'O2',name:'Oficina 2',sector:'Oficina',pin:'1112'},{id:'O3',name:'Oficina 3',sector:'Oficina',pin:'1113'},
+  {id:'L1',name:'Láser 1',sector:'Láser',pin:'2221'},{id:'L2',name:'Láser 2',sector:'Láser',pin:'2222'},
+  {id:'P1',name:'Plegado 1',sector:'Plegado',pin:'3331'},{id:'P2',name:'Plegado 2',sector:'Plegado',pin:'3332'},{id:'P3',name:'Plegado 3',sector:'Plegado',pin:'3333'},
+  {id:'S1',name:'Soldadura 1',sector:'Soldadura',pin:'4441'},
+  {id:'A1',name:'Lavado 1',sector:'Lavado',pin:'5551'},{id:'A2',name:'Lavado 2',sector:'Lavado',pin:'5552'},
+  {id:'T1',name:'Pintura 1',sector:'Pintura',pin:'6661'},{id:'T2',name:'Pintura 2',sector:'Pintura',pin:'6662'},{id:'T3',name:'Pintura 3',sector:'Pintura',pin:'6663'},
+  {id:'Q1',name:'Paquetería 1',sector:'Paquetería',pin:'7771'},{id:'Q2',name:'Paquetería 2',sector:'Paquetería',pin:'7772'},
+];
+
+let orders={},currentUser=null,pinBuffer='',selectedUser=null,currentSectorTab='Oficina',dbListener=null,formPurchases=[],showingForm=false;
+
+function todayStr(){return new Date().toISOString().split('T')[0];}
+function workingDays(n){const d=new Date();let a=0;while(a<n){d.setDate(d.getDate()+1);const day=d.getDay();if(day!==0&&day!==6)a++;}return d.toISOString().split('T')[0];}
+function fmtDate(s){if(!s)return'—';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;}
+function fmtTS(ts){if(!ts)return'—';return new Date(ts).toLocaleString('es-AR');}
+function getStatus(o){if(!o||!o.steps)return'Pendiente';const s=o.steps.find(s=>!s.done);return s?s.sector:'Completado';}
+function getProgress(o){if(!o||!o.steps)return 0;return Math.round(o.steps.filter(s=>s.done).length/o.steps.length*100);}
+function badgeClass(st){return{'Láser':'b-laser','Plegado':'b-plegado','Soldadura':'b-soldadura','Lavado':'b-lavado','Pintura':'b-pintura','Paquetería':'b-paqueteria','Completado':'b-done','Pendiente':'b-pending'}[st]||'b-pending';}
+function calcComp(cantidad,altura){if(altura==='1 metro')return{estantes:cantidad*3,patas:cantidad*4,escuadras:cantidad*8,uniones:0};return{estantes:cantidad*5,patas:cantidad*8,escuadras:cantidad*8,uniones:cantidad*4};}
+function cuelgues(n){return Math.ceil(n/16);}
+function calcPintura(c){if(c.tipo==='Galvanizada')return null;const comp=calcComp(c.cantidad,c.altura);return{estantes:c.tipo==='Clásica'?comp.estantes:0,patas:comp.patas,escuadras:comp.escuadras,uniones:comp.uniones,cP:cuelgues(comp.patas),cE:cuelgues(comp.escuadras),cU:comp.uniones>0?cuelgues(comp.uniones):0};}
+function genId(){return'ORD-'+Date.now().toString(36).toUpperCase().slice(-6);}
+
+// LOGIN
+function renderSectorTabs(){document.getElementById('sector-tabs').innerHTML=SECTORS.map(s=>`<button class="stab${s===currentSectorTab?' active':''}" onclick="selectSectorTab('${s}')">${s}</button>`).join('');}
+function renderUserGrid(){document.getElementById('user-grid').innerHTML=USERS.filter(u=>u.sector===currentSectorTab).map(u=>`<button class="ubtn${selectedUser&&selectedUser.id===u.id?' sel':''}" onclick="selectUser('${u.id}')"><div class="un">${u.name}</div><div class="us">${u.sector}</div></button>`).join('');}
+function selectSectorTab(s){currentSectorTab=s;selectedUser=null;clearPin();renderSectorTabs();renderUserGrid();}
+function selectUser(id){selectedUser=USERS.find(u=>u.id===id);clearPin();renderUserGrid();}
+function pressPin(n){if(pinBuffer.length>=4)return;pinBuffer+=String(n);updateDots();if(pinBuffer.length===4)setTimeout(tryLogin,130);}
+function backPin(){pinBuffer=pinBuffer.slice(0,-1);updateDots();}
+function clearPin(){pinBuffer='';updateDots();document.getElementById('pin-err').textContent='';}
+function updateDots(){for(let i=0;i<4;i++)document.getElementById('d'+i).classList.toggle('on',i<pinBuffer.length);}
+function tryLogin(){
+  const err=document.getElementById('pin-err');
+  if(pinBuffer===MASTER){doLogin({id:'MASTER',name:'Administrador',sector:'Oficina',isMaster:true});return;}
+  if(!selectedUser){err.textContent='Seleccioná un usuario primero';clearPin();return;}
+  if(pinBuffer===selectedUser.pin)doLogin({...selectedUser,isMaster:false});
+  else{err.textContent='PIN incorrecto';clearPin();}
+}
+function doLogin(user){
+  currentUser=user;
+  document.getElementById('login-screen').style.display='none';
+  const ms=document.getElementById('main-screen');ms.style.display='flex';ms.style.flexDirection='column';
+  document.getElementById('tb-info').textContent=user.name+(user.isMaster?' · Administrador':' · '+user.sector);
+  showingForm=false;
+  dbListener=db.ref('orders').on('value',snap=>{
+    orders=snap.val()||{};
+    document.getElementById('cdot').classList.add('on');
+    if(!showingForm)renderApp();
+  });
+}
+function logout(){
+  if(dbListener){db.ref('orders').off('value',dbListener);dbListener=null;}
+  currentUser=null;selectedUser=null;pinBuffer='';currentSectorTab='Oficina';showingForm=false;
+  clearPin();renderSectorTabs();renderUserGrid();
+  document.getElementById('main-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('cdot').classList.remove('on');
+}
+
+// RENDER
+function renderApp(){
+  showingForm=false;
+  const s=currentUser.sector;
+  if(s==='Oficina'||currentUser.isMaster)renderOficina();
+  else renderSector(s);
+}
+
+function renderOficina(){
+  const list=Object.entries(orders).map(([k,v])=>({...v,_key:k}));
+  const enP=list.filter(o=>getStatus(o)!=='Completado').length;
+  const done=list.filter(o=>getStatus(o)==='Completado').length;
+  document.getElementById('app-content').innerHTML=`
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num">${list.length}</div><div class="stat-lbl">Total</div></div>
+      <div class="stat-card"><div class="stat-num">${enP}</div><div class="stat-lbl">En proceso</div></div>
+      <div class="stat-card"><div class="stat-num">${done}</div><div class="stat-lbl">Completados</div></div>
+    </div>
+    <div class="toolbar">
+      <button class="new-btn" onclick="showForm()">+ Nueva orden</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <select class="filter-sel" id="f-estado" onchange="renderOficina()">
+          <option value="">Todos los estados</option>
+          ${FLOW.map(s=>`<option value="${s}">${s}</option>`).join('')}
+          <option value="Completado">Completado</option>
+        </select>
+        <select class="filter-sel" id="f-sort" onchange="renderOficina()">
+          <option value="nuevo">Más recientes</option>
+          <option value="entrega">Por entrega</option>
+        </select>
+      </div>
+    </div>
+    <div id="order-list"></div>`;
+  buildOrderList(list,null,true);
+}
+
+function renderSector(sector){
+  const list=Object.entries(orders).map(([k,v])=>({...v,_key:k}));
+  const mine=list.filter(o=>getStatus(o)===sector);
+  const actv=list.filter(o=>getStatus(o)!=='Completado');
+  document.getElementById('app-content').innerHTML=`
+    <div class="stats-row" style="grid-template-columns:1fr 1fr">
+      <div class="stat-card"><div class="stat-num">${mine.length}</div><div class="stat-lbl">En ${sector}</div></div>
+      <div class="stat-card"><div class="stat-num">${actv.length}</div><div class="stat-lbl">Total activas</div></div>
+    </div>
+    <div class="toolbar">
+      <select class="filter-sel" id="f-sort" onchange="renderApp()">
+        <option value="nuevo">Más recientes</option>
+        <option value="entrega">Por entrega</option>
+      </select>
+    </div>
+    <div class="sec-title">Órdenes en ${sector}</div>
+    <div id="order-list"></div>`;
+  buildOrderList(list,sector,false);
+}
+
+function buildOrderList(list,sectorFilter,isAdmin){
+  const fEstEl=document.getElementById('f-estado');
+  const fSortEl=document.getElementById('f-sort');
+  const fEst=fEstEl?fEstEl.value:'';
+  const fSort=fSortEl?fSortEl.value:'nuevo';
+  let fl=[...list];
+  if(sectorFilter)fl=fl.filter(o=>getStatus(o)===sectorFilter);
+  if(fEst)fl=fl.filter(o=>getStatus(o)===fEst);
+  if(fSort==='entrega')fl.sort((a,b)=>(a.fechaEntrega||'').localeCompare(b.fechaEntrega||''));
+  else fl.sort((a,b)=>(b.registradoEn||0)-(a.registradoEn||0));
+  const el=document.getElementById('order-list');
+  if(!fl.length){el.innerHTML='<div class="empty">No hay órdenes para mostrar</div>';return;}
+  el.innerHTML=fl.map(o=>{
+    const st=getStatus(o);const prog=getProgress(o);
+    const compras=Array.isArray(o.compras)?o.compras:[];
+    const isMine=!currentUser.isMaster&&currentUser.sector!=='Oficina'&&st===currentUser.sector;
+    const canDone=isMine&&(o.steps||[]).find(s=>s.sector===currentUser.sector&&!s.done);
+    const stepsHtml=(o.steps||[]).map(s=>`<span class="sp ${s.done?'sp-done':st===s.sector?'sp-active':'sp-pending'}">${s.sector}</span>`).join('');
+    const tsHtml=currentUser.isMaster&&o.registradoEn?`<div class="ts-row">Registrado: ${fmtTS(o.registradoEn)} por ${o.registradoPor||'—'}</div>`:'';
+    return`<div class="order-card${isMine?' mine':''}">
+      <div class="order-head">
+        <div>
+          <div class="oid">${o.id||o._key}</div>
+          <div class="oclient">${o.cliente}</div>
+          <div class="oproduct">Estantería · ${compras.length} compra${compras.length!==1?'s':''}</div>
+        </div>
+        <span class="badge ${badgeClass(st)}">${st}</span>
+      </div>
+      ${buildFields(o,compras)}
+      <div class="prog-wrap">
+        <div class="prog-bar"><div class="prog-fill" style="width:${prog}%"></div></div>
+        <div class="prog-steps">${stepsHtml}</div>
+      </div>
+      ${tsHtml}
+      ${canDone?`<button class="done-btn" onclick="advanceOrder('${o._key}')">✓ Terminado en ${currentUser.sector}</button>`:''}
+      ${isAdmin?`<button class="del-btn" onclick="deleteOrder('${o._key}')">Eliminar orden</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+function buildFields(o,compras){
+  const sec=currentUser.sector;const adm=currentUser.isMaster||sec==='Oficina';
+  if(adm)return compras.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">Compra ${i+1} — ${c.tipo} · ${c.altura} · ${c.medida}</div><div class="fields"><div><div class="fl">Cantidad</div><div class="fv">${c.cantidad} estant.</div></div><div><div class="fl">Color</div><div class="fv">${c.color}</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Altura</div><div class="fv">${c.altura}</div></div><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">Patas</div><div class="fv">${comp.patas}</div></div><div><div class="fl">Escuadras</div><div class="fv">${comp.escuadras}</div></div>${comp.uniones>0?`<div><div class="fl">Uniones</div><div class="fv">${comp.uniones}</div></div>`:''}<div><div class="fl">Logística</div><div class="fv">${c.logistica}</div></div><div><div class="fl">F. compra</div><div class="fv">${fmtDate(o.fechaCompra)}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
+  if(sec==='Láser')return compras.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">Compra ${i+1}</div><div class="fields"><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Tipo chapa</div><div class="fv">${c.tipo}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
+  if(sec==='Plegado')return compras.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">Compra ${i+1}</div><div class="fields"><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Tipo chapa</div><div class="fv">${c.tipo}</div></div><div><div class="fl">F. compra</div><div class="fv">${fmtDate(o.fechaCompra)}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
+  if(sec==='Soldadura'){const rel=compras.filter(c=>c.medida==='90x60');if(!rel.length)return`<div class="pi" style="color:var(--text3);font-size:13px;">Sin órdenes 90x60 en este pedido</div>`;return rel.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">90x60 — Compra ${i+1}</div><div class="fields"><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');}
+  if(sec==='Lavado')return compras.map((c,i)=>`<div class="pi"><div class="pi-title">Compra ${i+1}</div><div class="fields"><div><div class="fl">Cantidad</div><div class="fv">${c.cantidad} estant.</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Color</div><div class="fv">${c.color}</div></div></div></div>`).join('');
+  if(sec==='Pintura')return compras.map((c,i)=>{const p=calcPintura(c);if(!p)return`<div class="pi"><div class="pi-title">Compra ${i+1} — ${c.tipo}</div><div style="font-size:13px;color:var(--text3);">Galvanizada — no se pinta</div></div>`;return`<div class="pi"><div class="pi-title">Compra ${i+1} — ${c.tipo} · ${c.medida} · ${c.color}</div><div class="fields">${p.estantes>0?`<div><div class="fl">Estantes</div><div class="fv">${p.estantes}</div></div>`:''}<div><div class="fl">Patas</div><div class="fv">${p.patas} <span style="color:var(--accent2)">(${p.cP} cuelgue${p.cP!==1?'s':''})</span></div></div><div><div class="fl">Escuadras</div><div class="fv">${p.escuadras} <span style="color:var(--accent2)">(${p.cE} cuelgue${p.cE!==1?'s':''})</span></div></div>${p.uniones>0?`<div><div class="fl">Uniones</div><div class="fv">${p.uniones} <span style="color:var(--accent2)">(${p.cU} cuelgue${p.cU!==1?'s':''})</span></div></div>`:''}<div><div class="fl">Color</div><div class="fv">${c.color}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
+  if(sec==='Paquetería')return compras.map((c,i)=>`<div class="pi"><div class="pi-title">Compra ${i+1}</div><div class="fields"><div><div class="fl">Cliente</div><div class="fv">${o.cliente}</div></div><div><div class="fl">Tipo</div><div class="fv">Estantería ${c.tipo}</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Altura</div><div class="fv">${c.altura}</div></div><div><div class="fl">Color</div><div class="fv">${c.color}</div></div><div><div class="fl">Cantidad</div><div class="fv">${c.cantidad} estant.</div></div><div><div class="fl">F. compra</div><div class="fv">${fmtDate(o.fechaCompra)}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div><div><div class="fl">Logística</div><div class="fv">${c.logistica}</div></div></div></div>`).join('');
+  return'';
+}
+
+function advanceOrder(key){
+  const o=orders[key];if(!o)return;
+  const steps=(o.steps||[]).map(s=>({...s}));
+  const idx=steps.findIndex(s=>s.sector===currentUser.sector&&!s.done);
+  if(idx<0)return;
+  steps[idx]={...steps[idx],done:true,doneAt:new Date().toISOString(),doneBy:currentUser.name};
+  db.ref('orders/'+key).update({steps});
+}
+
+function deleteOrder(key){if(!confirm('¿Eliminar esta orden?'))return;db.ref('orders/'+key).remove();}
+
+// FORM
+function showForm(){showingForm=true;formPurchases=[newP()];renderForm();}
+function newP(){return{tipo:'',altura:'',medida:'',color:'',logistica:'',cantidad:1};}
+
+function renderForm(){
+  const today=todayStr();const defEnt=workingDays(3);
+  document.getElementById('app-content').innerHTML=`
+    <div class="sec-title">Nueva orden de compra</div>
+    <div class="form-wrap">
+      <div class="form-section-title">Datos del cliente</div>
+      <div class="fgrid">
+        <div class="ffull">
+          <label class="flabel">Nombre del cliente</label>
+          <input class="finput" id="f-cli" placeholder="Nombre completo o empresa" autocomplete="off">
+        </div>
+        <div>
+          <label class="flabel">Fecha de compra</label>
+          <input class="finput" type="date" id="f-fcom" value="${today}">
+        </div>
+        <div>
+          <label class="flabel">Fecha de entrega</label>
+          <input class="finput" type="date" id="f-fent" value="${defEnt}">
+        </div>
+      </div>
+    </div>
+    <div class="form-wrap">
+      <div class="form-section-title">Compras del pedido</div>
+      <div id="purchases-container"></div>
+      <button class="add-more-btn" onclick="addPurchase()">+ Agregar otra compra</button>
+    </div>
+    <div style="margin-bottom:2rem;">
+      <button class="submit-btn" onclick="submitOrder()">Registrar orden</button>
+      <button class="cancel-btn" onclick="renderApp()">Cancelar</button>
+    </div>`;
+  renderPurchases();
+}
+
+function renderPurchases(){
+  document.getElementById('purchases-container').innerHTML=formPurchases.map((p,i)=>purchaseHTML(p,i)).join('');
+}
+
+function purchaseHTML(p,i){
+  const comp=(p.cantidad>0&&p.altura)?calcComp(p.cantidad,p.altura):null;
+  let compStr='—';
+  if(comp){const pts=[`<strong>${comp.estantes}</strong> estantes`,`<strong>${comp.patas}</strong> patas`,`<strong>${comp.escuadras}</strong> escuadras`];if(comp.uniones>0)pts.push(`<strong>${comp.uniones}</strong> uniones`);compStr=pts.join(' · ');}
+  return`<div class="purchase-item">
+    ${formPurchases.length>1?`<button class="pi-remove" onclick="removePurchase(${i})">×</button>`:''}
+    <div style="font-size:11px;font-weight:700;color:var(--accent2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;">Compra ${i+1}</div>
+    <label class="flabel">Tipo de estantería</label>
+    <div class="btn-group" style="margin-bottom:14px;">
+      <button class="tog${p.tipo==='Clásica'?' on':''}" onclick="setP(${i},'tipo','Clásica')">Clásica</button>
+      <button class="tog${p.tipo==='Lisa'?' on':''}" onclick="setP(${i},'tipo','Lisa')">Lisa</button>
+      <button class="tog${p.tipo==='Galvanizada'?' on':''}" onclick="setP(${i},'tipo','Galvanizada')">Galvanizada</button>
+    </div>
+    <label class="flabel">Altura</label>
+    <div class="btn-group" style="margin-bottom:14px;">
+      <button class="tog${p.altura==='1 metro'?' on':''}" onclick="setP(${i},'altura','1 metro')">1 metro</button>
+      <button class="tog${p.altura==='2 metros'?' on':''}" onclick="setP(${i},'altura','2 metros')">2 metros</button>
+    </div>
+    <div class="row2" style="margin-bottom:14px;">
+      <div>
+        <label class="flabel">Medida</label>
+        <select class="fselect" onchange="setP(${i},'medida',this.value)">
+          <option value="">Seleccionar medida...</option>
+          ${MEDIDAS.map(m=>`<option value="${m}"${p.medida===m?' selected':''}>${m}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label class="flabel">Cantidad de estanterías</label>
+        <input class="finput" type="number" min="1" value="${p.cantidad||1}" onchange="setP(${i},'cantidad',Math.max(1,parseInt(this.value)||1))">
+      </div>
+    </div>
+    <label class="flabel">Color</label>
+    <div class="color-row" style="margin-bottom:14px;">
+      ${COLORES.map(col=>`<button class="cbtn${p.color===col.n?' on':''}" style="background:${col.h};" onclick="setP(${i},'color','${col.n}')"><span>${col.n}</span></button>`).join('')}
+    </div>
+    <label class="flabel">Logística</label>
+    <div class="btn-group" style="margin-bottom:14px;flex-wrap:wrap;">
+      ${LOGISTICA.map(l=>`<button class="tog${p.logistica===l?' on':''}" onclick="setP(${i},'logistica','${l}')">${l}</button>`).join('')}
+    </div>
+    <label class="flabel">Componentes calculados</label>
+    <div class="calc-box">${compStr}</div>
+  </div>`;
+}
+
+function setP(i,field,val){formPurchases[i][field]=val;renderPurchases();}
+function addPurchase(){formPurchases.push(newP());renderPurchases();}
+function removePurchase(i){formPurchases.splice(i,1);renderPurchases();}
+
+function submitOrder(){
+  const cli=document.getElementById('f-cli').value.trim();
+  const fcom=document.getElementById('f-fcom').value;
+  const fent=document.getElementById('f-fent').value;
+  if(!cli){alert('Ingresá el nombre del cliente.');return;}
+  if(!fcom||!fent){alert('Completá las fechas.');return;}
+  for(let i=0;i<formPurchases.length;i++){
+    const p=formPurchases[i];
+    if(!p.tipo){alert(`Compra ${i+1}: seleccioná el tipo de estantería.`);return;}
+    if(!p.altura){alert(`Compra ${i+1}: seleccioná la altura.`);return;}
+    if(!p.medida){alert(`Compra ${i+1}: seleccioná la medida.`);return;}
+    if(!p.color){alert(`Compra ${i+1}: seleccioná el color.`);return;}
+    if(!p.logistica){alert(`Compra ${i+1}: seleccioná la logística.`);return;}
+  }
+  const order={
+    id:genId(),cliente:cli,fechaCompra:fcom,fechaEntrega:fent,
+    registradoEn:Date.now(),registradoPor:currentUser.name,
+    compras:formPurchases.map(p=>({tipo:p.tipo,altura:p.altura,medida:p.medida,color:p.color,logistica:p.logistica,cantidad:p.cantidad||1})),
+    steps:FLOW.map(s=>({sector:s,done:false,doneAt:null,doneBy:null}))
+  };
+  db.ref('orders').push(order).then(()=>{showingForm=false;renderApp();}).catch(err=>alert('Error: '+err.message));
+}
+
+// INIT
+renderSectorTabs();
+renderUserGrid();
+</script>
+</body>
+</html>
