@@ -272,6 +272,8 @@ function renderOficina(){
   buildOrderList(list,null,true);
 }
 
+// FIX 1: Todos los sectores ven TODAS las órdenes activas (no solo las de su etapa).
+// El botón "Terminado" solo aparece en las que corresponden a su sector.
 function renderSector(sector){
   const list=Object.entries(orders).map(([k,v])=>({...v,_key:k}));
   const mine=list.filter(o=>getStatus(o)===sector);
@@ -289,7 +291,7 @@ function renderSector(sector){
     </div>
     <div class="sec-title">Órdenes en ${sector}</div>
     <div id="order-list"></div>`;
-  buildOrderList(list,sector,false);
+  buildOrderList(actv,null,false);
 }
 
 function buildOrderList(list,sectorFilter,isAdmin){
@@ -335,7 +337,8 @@ function buildOrderList(list,sectorFilter,isAdmin){
 function buildFields(o,compras){
   const sec=currentUser.sector;const adm=currentUser.isMaster||sec==='Oficina';
   if(adm)return compras.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">Compra ${i+1} — ${c.tipo} · ${c.altura} · ${c.medida}</div><div class="fields"><div><div class="fl">Cantidad</div><div class="fv">${c.cantidad} estant.</div></div><div><div class="fl">Color</div><div class="fv">${c.color}</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Altura</div><div class="fv">${c.altura}</div></div><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">Patas</div><div class="fv">${comp.patas}</div></div><div><div class="fl">Escuadras</div><div class="fv">${comp.escuadras}</div></div>${comp.uniones>0?`<div><div class="fl">Uniones</div><div class="fv">${comp.uniones}</div></div>`:''}<div><div class="fl">Logística</div><div class="fv">${c.logistica}</div></div><div><div class="fl">F. compra</div><div class="fv">${fmtDate(o.fechaCompra)}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
-  if(sec==='Láser')return compras.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">Compra ${i+1}</div><div class="fields"><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Tipo chapa</div><div class="fv">${c.tipo}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
+  // FIX 2: Láser muestra Medida primero, luego Estantes (cantidad de piezas)
+  if(sec==='Láser')return compras.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">Compra ${i+1}</div><div class="fields"><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">Tipo chapa</div><div class="fv">${c.tipo}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
   if(sec==='Plegado')return compras.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">Compra ${i+1}</div><div class="fields"><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Tipo chapa</div><div class="fv">${c.tipo}</div></div><div><div class="fl">F. compra</div><div class="fv">${fmtDate(o.fechaCompra)}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
   if(sec==='Soldadura'){const rel=compras.filter(c=>c.medida==='90x60');if(!rel.length)return`<div class="pi" style="color:var(--text3);font-size:13px;">Sin órdenes 90x60 en este pedido</div>`;return rel.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">90x60 — Compra ${i+1}</div><div class="fields"><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');}
   if(sec==='Lavado')return compras.map((c,i)=>`<div class="pi"><div class="pi-title">Compra ${i+1}</div><div class="fields"><div><div class="fl">Cantidad</div><div class="fv">${c.cantidad} estant.</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Color</div><div class="fv">${c.color}</div></div></div></div>`).join('');
