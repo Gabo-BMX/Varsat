@@ -176,13 +176,22 @@ const MEDIDAS=['60x20','60x30','60x40','60x50','60x60','70x30','70x35','70x40','
 const COLORES=[{n:'Blanco',h:'#e8e8e8'},{n:'Negro',h:'#222'},{n:'Azul',h:'#1d4ed8'},{n:'Rojo',h:'#dc2626'},{n:'Gris',h:'#6b7280'},{n:'Naranja',h:'#ea580c'}];
 const LOGISTICA=['Via Cargo','Flex','Cruz del Sur','Simple'];
 const USERS=[
-  {id:'O1',name:'Oficina 1',sector:'Oficina',pin:'1111'},{id:'O2',name:'Oficina 2',sector:'Oficina',pin:'1112'},{id:'O3',name:'Oficina 3',sector:'Oficina',pin:'1113'},
-  {id:'L1',name:'Láser 1',sector:'Láser',pin:'2221'},{id:'L2',name:'Láser 2',sector:'Láser',pin:'2222'},
-  {id:'P1',name:'Plegado 1',sector:'Plegado',pin:'3331'},{id:'P2',name:'Plegado 2',sector:'Plegado',pin:'3332'},{id:'P3',name:'Plegado 3',sector:'Plegado',pin:'3333'},
+  {id:'O1',name:'Catalina',sector:'Oficina',pin:'1111'},
+  {id:'O2',name:'Noelia',sector:'Oficina',pin:'1112'},
+  {id:'O3',name:'Quiara',sector:'Oficina',pin:'1113'},
+  {id:'L1',name:'Javi',sector:'Láser',pin:'2221'},
+  {id:'L2',name:'Agustina',sector:'Láser',pin:'2222'},
+  {id:'P1',name:'Dario',sector:'Plegado',pin:'3331'},
+  {id:'P2',name:'Victor',sector:'Plegado',pin:'3332'},
+  {id:'P3',name:'Ema',sector:'Plegado',pin:'3333'},
   {id:'S1',name:'Soldadura 1',sector:'Soldadura',pin:'4441'},
-  {id:'A1',name:'Lavado 1',sector:'Lavado',pin:'5551'},{id:'A2',name:'Lavado 2',sector:'Lavado',pin:'5552'},
-  {id:'T1',name:'Pintura 1',sector:'Pintura',pin:'6661'},{id:'T2',name:'Pintura 2',sector:'Pintura',pin:'6662'},{id:'T3',name:'Pintura 3',sector:'Pintura',pin:'6663'},
-  {id:'Q1',name:'Paquetería 1',sector:'Paquetería',pin:'7771'},{id:'Q2',name:'Paquetería 2',sector:'Paquetería',pin:'7772'},
+  {id:'A1',name:'Lauti',sector:'Lavado',pin:'5551'},
+  {id:'A2',name:'Nico',sector:'Lavado',pin:'5552'},
+  {id:'T1',name:'Gabi',sector:'Pintura',pin:'6661'},
+  {id:'T2',name:'Alex',sector:'Pintura',pin:'6662'},
+  {id:'T3',name:'Rolo',sector:'Pintura',pin:'6663'},
+  {id:'Q1',name:'Cristian',sector:'Paquetería',pin:'7771'},
+  {id:'Q2',name:'Luca',sector:'Paquetería',pin:'7772'},
 ];
 
 let orders={},currentUser=null,pinBuffer='',selectedUser=null,currentSectorTab='Oficina',dbListener=null,formPurchases=[],showingForm=false;
@@ -199,7 +208,6 @@ function cuelgues(n){return Math.ceil(n/16);}
 function calcPintura(c){if(c.tipo==='Galvanizada')return null;const comp=calcComp(c.cantidad,c.altura);return{estantes:c.tipo==='Clásica'?comp.estantes:0,patas:comp.patas,escuadras:comp.escuadras,uniones:comp.uniones,cP:cuelgues(comp.patas),cE:cuelgues(comp.escuadras),cU:comp.uniones>0?cuelgues(comp.uniones):0};}
 function genId(){return'ORD-'+Date.now().toString(36).toUpperCase().slice(-6);}
 
-// LOGIN
 function renderSectorTabs(){document.getElementById('sector-tabs').innerHTML=SECTORS.map(s=>`<button class="stab${s===currentSectorTab?' active':''}" onclick="selectSectorTab('${s}')">${s}</button>`).join('');}
 function renderUserGrid(){document.getElementById('user-grid').innerHTML=USERS.filter(u=>u.sector===currentSectorTab).map(u=>`<button class="ubtn${selectedUser&&selectedUser.id===u.id?' sel':''}" onclick="selectUser('${u.id}')"><div class="un">${u.name}</div><div class="us">${u.sector}</div></button>`).join('');}
 function selectSectorTab(s){currentSectorTab=s;selectedUser=null;clearPin();renderSectorTabs();renderUserGrid();}
@@ -236,7 +244,6 @@ function logout(){
   document.getElementById('cdot').classList.remove('on');
 }
 
-// RENDER
 function renderApp(){
   showingForm=false;
   const s=currentUser.sector;
@@ -272,8 +279,6 @@ function renderOficina(){
   buildOrderList(list,null,true);
 }
 
-// FIX 1: Todos los sectores ven TODAS las órdenes activas (no solo las de su etapa).
-// El botón "Terminado" solo aparece en las que corresponden a su sector.
 function renderSector(sector){
   const list=Object.entries(orders).map(([k,v])=>({...v,_key:k}));
   const mine=list.filter(o=>getStatus(o)===sector);
@@ -337,7 +342,6 @@ function buildOrderList(list,sectorFilter,isAdmin){
 function buildFields(o,compras){
   const sec=currentUser.sector;const adm=currentUser.isMaster||sec==='Oficina';
   if(adm)return compras.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">Compra ${i+1} — ${c.tipo} · ${c.altura} · ${c.medida}</div><div class="fields"><div><div class="fl">Cantidad</div><div class="fv">${c.cantidad} estant.</div></div><div><div class="fl">Color</div><div class="fv">${c.color}</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Altura</div><div class="fv">${c.altura}</div></div><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">Patas</div><div class="fv">${comp.patas}</div></div><div><div class="fl">Escuadras</div><div class="fv">${comp.escuadras}</div></div>${comp.uniones>0?`<div><div class="fl">Uniones</div><div class="fv">${comp.uniones}</div></div>`:''}<div><div class="fl">Logística</div><div class="fv">${c.logistica}</div></div><div><div class="fl">F. compra</div><div class="fv">${fmtDate(o.fechaCompra)}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
-  // FIX 2: Láser muestra Medida primero, luego Estantes (cantidad de piezas)
   if(sec==='Láser')return compras.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">Compra ${i+1}</div><div class="fields"><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">Tipo chapa</div><div class="fv">${c.tipo}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
   if(sec==='Plegado')return compras.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">Compra ${i+1}</div><div class="fields"><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">Medida</div><div class="fv">${c.medida}</div></div><div><div class="fl">Tipo chapa</div><div class="fv">${c.tipo}</div></div><div><div class="fl">F. compra</div><div class="fv">${fmtDate(o.fechaCompra)}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');
   if(sec==='Soldadura'){const rel=compras.filter(c=>c.medida==='90x60');if(!rel.length)return`<div class="pi" style="color:var(--text3);font-size:13px;">Sin órdenes 90x60 en este pedido</div>`;return rel.map((c,i)=>{const comp=calcComp(c.cantidad||1,c.altura);return`<div class="pi"><div class="pi-title">90x60 — Compra ${i+1}</div><div class="fields"><div><div class="fl">Estantes</div><div class="fv">${comp.estantes}</div></div><div><div class="fl">F. entrega</div><div class="fv">${fmtDate(o.fechaEntrega)}</div></div></div></div>`;}).join('');}
@@ -358,7 +362,6 @@ function advanceOrder(key){
 
 function deleteOrder(key){if(!confirm('¿Eliminar esta orden?'))return;db.ref('orders/'+key).remove();}
 
-// FORM
 function showForm(){showingForm=true;formPurchases=[newP()];renderForm();}
 function newP(){return{tipo:'',altura:'',medida:'',color:'',logistica:'',cantidad:1};}
 
@@ -470,7 +473,6 @@ function submitOrder(){
   db.ref('orders').push(order).then(()=>{showingForm=false;renderApp();}).catch(err=>alert('Error: '+err.message));
 }
 
-// INIT
 renderSectorTabs();
 renderUserGrid();
 </script>
